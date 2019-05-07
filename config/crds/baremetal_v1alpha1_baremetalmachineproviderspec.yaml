@@ -46,7 +46,6 @@ spec:
           type: object
       required:
       - image
-      - userData
   version: v1alpha1
 status:
   acceptedNames:
