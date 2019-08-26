@@ -1277,7 +1277,7 @@ func TestUpdateMachineStatus(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = actuator.updateMachineStatus(context.TODO(), tc.Machine, tc.Host)
+		err = actuator.updateMachine(context.TODO(), tc.Machine, tc.Host)
 		if err != nil {
 			t.Errorf("unexpected error %v", err)
 		}

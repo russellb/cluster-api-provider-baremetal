@@ -136,7 +136,7 @@ func (a *Actuator) Create(ctx context.Context, cluster *clusterv1.Cluster, machi
 		return err
 	}
 
-	if err := a.updateMachineStatus(ctx, machine, host); err != nil {
+	if err := a.updateMachine(ctx, machine, host); err != nil {
 		return err
 	}
 
@@ -252,7 +252,7 @@ func (a *Actuator) Update(ctx context.Context, cluster *clusterv1.Cluster, machi
 		return err
 	}
 
-	if err := a.updateMachineStatus(ctx, machine, host); err != nil {
+	if err := a.updateMachine(ctx, machine, host); err != nil {
 		return err
 	}
 
@@ -513,8 +513,25 @@ func configFromProviderSpec(providerSpec machinev1.ProviderSpec) (*bmv1alpha1.Ba
 	return &config, nil
 }
 
-// updateMachineStatus updates a machine object's status.
-func (a *Actuator) updateMachineStatus(ctx context.Context, machine *machinev1.Machine, host *bmh.BareMetalHost) error {
+// updateMachine updates a machine object's status.
+func (a *Actuator) updateMachine(ctx context.Context, machine *machinev1.Machine, host *bmh.BareMetalHost) error {
+	machineLabels := machine.ObjectMeta.GetLabels()
+	if machineLabels == nil {
+		machineLabels = make(map[string]string)
+	}
+	machineLabels["machine.openshift.io/instance-type"] = host.Status.HardwareProfile
+	machine.ObjectMeta.SetLabels(machineLabels)
+	machineAnnotations := machine.ObjectMeta.GetAnnotations()
+	if machineAnnotations == nil {
+		machineAnnotations = make(map[string]string)
+	}
+	machineAnnotations["machine.openshift.io/instance-state"] = strings.Replace(string(host.Status.Provisioning.State), " ", "_", -1)
+	machine.ObjectMeta.SetAnnotations(machineAnnotations)
+	err := a.client.Update(ctx, machine)
+	if err != nil {
+		return err
+	}
+
 	addrs, err := a.nodeAddresses(host)
 	if err != nil {
 		return err
